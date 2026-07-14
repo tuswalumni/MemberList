@@ -58,22 +58,33 @@
         </div>
       </div>
       
-      <div class="flex flex-wrap gap-3 w-full lg:w-auto">
-        <button onclick="openNewsletterModal()" class="flex-1 lg:flex-none inline-flex items-center justify-center px-6 py-3 bg-indigo-600 text-white text-xs font-black rounded-2xl hover:bg-indigo-700 transition-all shadow-lg border-b-4 border-indigo-800 active:border-b-0 active:translate-y-0">
-          <i data-lucide="mail" class="w-4 h-4 mr-2"></i> ส่งข่าวสารถึงสมาชิก
-        </button>
-        <a href="#" data-page="honorary" class="nav-admin-link flex-1 lg:flex-none inline-flex items-center justify-center px-6 py-3 bg-emerald-600 text-white text-xs font-black rounded-2xl hover:bg-emerald-700 transition-all shadow-lg border-b-4 border-emerald-800 active:border-b-0 active:translate-y-0">
-          <i data-lucide="crown" class="w-4 h-4 mr-2"></i> เพิ่มสมาชิกกิตติมศักดิ์
-        </a>
-        <a href="#" data-page="dashboard" class="nav-admin-link flex-1 lg:flex-none inline-flex items-center justify-center px-6 py-3 bg-slate-800 text-white text-xs font-extrabold rounded-2xl hover:bg-slate-900 transition-all shadow-lg">
-          <i data-lucide="layout-dashboard" class="w-4 h-4 mr-2"></i> DASHBOARD
-        </a>
-        <button onclick="loadData()" class="flex-1 lg:flex-none inline-flex items-center justify-center px-6 py-3 bg-white text-slate-600 text-xs font-extrabold rounded-2xl border-2 border-slate-100 hover:bg-slate-50 transition-all">
-          <i data-lucide="refresh-cw" class="w-4 h-4 mr-2"></i> REFRESH
-        </button>
-        <button onclick="adminLogout()" class="flex-1 lg:flex-none inline-flex items-center justify-center px-6 py-3 bg-red-50 text-red-600 text-xs font-extrabold rounded-2xl border-2 border-red-100 hover:bg-red-100 transition-all">
-          <i data-lucide="log-out" class="w-4 h-4 mr-2"></i> ออกจากระบบ
-        </button>
+      <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+        <!-- กลุ่มปุ่มหลัก -->
+        <div class="flex flex-wrap gap-2">
+          <button onclick="openNewsletterModal()" class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white text-xs font-black rounded-xl hover:bg-indigo-700 hover:-translate-y-0.5 transition-all shadow-md shadow-indigo-100">
+            <i data-lucide="mail" class="w-4 h-4"></i> ส่งข่าวสารถึงสมาชิก
+          </button>
+          <a href="#" data-page="honorary" class="nav-admin-link inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white text-xs font-black rounded-xl hover:bg-emerald-700 hover:-translate-y-0.5 transition-all shadow-md shadow-emerald-100">
+            <i data-lucide="crown" class="w-4 h-4"></i> เพิ่มสมาชิกกิตติมศักดิ์
+          </a>
+        </div>
+
+        <!-- กลุ่มปุ่มเครื่องมือ (icon cluster) -->
+        <div class="flex items-center gap-0.5 bg-slate-100 rounded-xl p-1">
+          <a href="#" data-page="dashboard" title="Dashboard" class="nav-admin-link group relative inline-flex items-center justify-center w-10 h-10 text-slate-500 rounded-lg hover:bg-white hover:shadow-sm hover:text-slate-900 transition-all">
+            <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+            <span class="pointer-events-none absolute -bottom-9 left-1/2 -translate-x-1/2 whitespace-nowrap bg-slate-900 text-white text-[10px] font-bold px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">Dashboard</span>
+          </a>
+          <button onclick="loadData()" title="รีเฟรชข้อมูล" class="group relative inline-flex items-center justify-center w-10 h-10 text-slate-500 rounded-lg hover:bg-white hover:shadow-sm hover:text-slate-900 transition-all">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+            <span class="pointer-events-none absolute -bottom-9 left-1/2 -translate-x-1/2 whitespace-nowrap bg-slate-900 text-white text-[10px] font-bold px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">รีเฟรชข้อมูล</span>
+          </button>
+          <div class="w-px h-6 bg-slate-300 mx-1"></div>
+          <button onclick="adminLogout()" title="ออกจากระบบ" class="group relative inline-flex items-center justify-center w-10 h-10 text-red-500 rounded-lg hover:bg-red-50 transition-all">
+            <i data-lucide="log-out" class="w-4 h-4"></i>
+            <span class="pointer-events-none absolute -bottom-9 left-1/2 -translate-x-1/2 whitespace-nowrap bg-slate-900 text-white text-[10px] font-bold px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">ออกจากระบบ</span>
+          </button>
+        </div>
       </div>
     </div>
 
