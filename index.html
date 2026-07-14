@@ -1379,7 +1379,12 @@ function handleHonorarySubmit(form) {
 // ============================================================
 // ✅ ส่งข่าวสารถึงสมาชิก (Newsletter)
 // ============================================================
+let nlImages = []; // { base64, filename, mimeType } — เก็บรูปที่บีบอัดแล้ว รอส่ง
+const NL_MAX_IMAGES = 3;
+
 function openNewsletterModal() {
+  nlImages = []; // เคลียร์รูปทุกครั้งที่เปิด modal ใหม่
+
   Swal.fire({
     title: '📧 ส่งข่าวสารถึงสมาชิก',
     html: `
@@ -1390,7 +1395,18 @@ function openNewsletterModal() {
         </div>
         <div>
           <label class="block text-xs font-extrabold text-slate-700 mb-1.5 ml-1">เนื้อหาข่าวสาร <span class="text-red-500">*</span></label>
-          <textarea id="nl-message" rows="7" class="w-full p-3 bg-white border-2 border-slate-200 rounded-xl font-medium text-slate-700 focus:border-indigo-500 outline-none" placeholder="พิมพ์ข้อความถึงสมาชิก... (ใช้ {{ชื่อ}} เพื่อแทรกชื่อผู้รับอัตโนมัติ)"></textarea>
+          <textarea id="nl-message" rows="6" class="w-full p-3 bg-white border-2 border-slate-200 rounded-xl font-medium text-slate-700 focus:border-indigo-500 outline-none" placeholder="พิมพ์ข้อความถึงสมาชิก... (ใช้ {{ชื่อ}} เพื่อแทรกชื่อผู้รับอัตโนมัติ)"></textarea>
+        </div>
+        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-xs font-extrabold text-slate-600">แนบรูปภาพ (ไม่บังคับ สูงสุด ${NL_MAX_IMAGES} รูป)</p>
+            <label id="nl-image-add-label" class="cursor-pointer inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-800">
+              <i data-lucide="image-plus" class="w-4 h-4"></i> เลือกรูป
+              <input type="file" id="nl-image-input" accept="image/*" multiple class="hidden">
+            </label>
+          </div>
+          <div id="nl-image-preview" class="flex flex-wrap gap-2"></div>
+          <p id="nl-image-status" class="text-[11px] text-slate-400 mt-1"></p>
         </div>
         <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
           <p class="text-xs font-extrabold text-slate-600 mb-2">ส่งถึงสมาชิกประเภท</p>
@@ -1416,6 +1432,7 @@ function openNewsletterModal() {
       if (typeof lucide !== 'undefined') lucide.createIcons();
       refreshNewsletterCount();
       document.querySelectorAll('.nl-filter').forEach(el => el.addEventListener('change', refreshNewsletterCount));
+      document.getElementById('nl-image-input').addEventListener('change', handleNlImageSelect);
     },
     preConfirm: () => {
       const subject = document.getElementById('nl-subject').value.trim();
@@ -1429,12 +1446,95 @@ function openNewsletterModal() {
         Swal.showValidationMessage('⚠️ กรุณาเลือกประเภทสมาชิกอย่างน้อย 1 ประเภท');
         return false;
       }
-      return { subject: subject, message: message, filters: filters };
+      return { subject: subject, message: message, filters: filters, images: nlImages };
     }
   }).then((result) => {
     if (!result.isConfirmed) return;
     confirmAndSendNewsletter(result.value);
   });
+}
+
+// บีบอัดรูปภาพในเบราว์เซอร์ก่อนส่ง (ลดขนาดไฟล์ กันอีเมลใหญ่เกินตอนส่งพร้อมกันหลายร้อยคน)
+function compressImageFile(file, maxDim, quality) {
+  maxDim = maxDim || 1400;
+  quality = quality || 0.82;
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width, height = img.height;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) { height = Math.round(height * maxDim / width); width = maxDim; }
+          else { width = Math.round(width * maxDim / height); height = maxDim; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        const base64 = canvas.toDataURL('image/jpeg', quality);
+        resolve({
+          base64: base64,
+          filename: (file.name || 'image').replace(/\.[^.]+$/, '') + '.jpg',
+          mimeType: 'image/jpeg',
+          sizeKB: Math.round((base64.length * 0.75) / 1024)
+        });
+      };
+      img.onerror = () => reject(new Error('ไม่สามารถอ่านไฟล์รูปภาพได้'));
+      img.src = e.target.result;
+    };
+    reader.onerror = () => reject(new Error('อ่านไฟล์ไม่สำเร็จ'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function handleNlImageSelect(e) {
+  const files = Array.from(e.target.files || []);
+  e.target.value = ''; // เคลียร์ input เพื่อให้เลือกไฟล์เดิมซ้ำได้ในอนาคต
+  if (files.length === 0) return;
+
+  const statusEl = document.getElementById('nl-image-status');
+  const remainSlots = NL_MAX_IMAGES - nlImages.length;
+  if (remainSlots <= 0) {
+    if (statusEl) statusEl.textContent = `แนบได้สูงสุด ${NL_MAX_IMAGES} รูป กรุณาลบรูปเดิมก่อนเพิ่มใหม่`;
+    return;
+  }
+  const toProcess = files.slice(0, remainSlots);
+  if (statusEl) statusEl.textContent = 'กำลังบีบอัดรูปภาพ...';
+
+  Promise.all(toProcess.map(f => compressImageFile(f).catch(err => { console.error(err); return null; })))
+    .then(results => {
+      results.filter(Boolean).forEach(r => nlImages.push(r));
+      renderNlImagePreviews();
+    });
+}
+
+function renderNlImagePreviews() {
+  const container = document.getElementById('nl-image-preview');
+  const statusEl = document.getElementById('nl-image-status');
+  const addLabel = document.getElementById('nl-image-add-label');
+  if (!container) return;
+
+  container.innerHTML = nlImages.map((img, i) => `
+    <div class="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-slate-200 group">
+      <img src="${img.base64}" class="w-full h-full object-cover">
+      <button type="button" onclick="removeNlImage(${i})" class="absolute top-0.5 right-0.5 w-5 h-5 bg-slate-900/70 text-white rounded-full flex items-center justify-center text-xs font-bold hover:bg-red-600 transition">✕</button>
+    </div>
+  `).join('');
+
+  if (addLabel) addLabel.classList.toggle('hidden', nlImages.length >= NL_MAX_IMAGES);
+
+  if (statusEl) {
+    const totalKB = nlImages.reduce((sum, img) => sum + (img.sizeKB || 0), 0);
+    statusEl.textContent = nlImages.length > 0
+      ? `แนบแล้ว ${nlImages.length}/${NL_MAX_IMAGES} รูป (รวมประมาณ ${totalKB.toLocaleString('th-TH')} KB หลังบีบอัด)`
+      : '';
+  }
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function removeNlImage(index) {
+  nlImages.splice(index, 1);
+  renderNlImagePreviews();
 }
 
 function getNewsletterFilters() {
@@ -1467,9 +1567,10 @@ function refreshNewsletterCount() {
 }
 
 function confirmAndSendNewsletter(payload) {
+  const imageNote = payload.images && payload.images.length ? `<br><span class="text-sm text-slate-500">แนบรูปภาพ ${payload.images.length} รูป</span>` : '';
   Swal.fire({
     title: 'ยืนยันการส่งข่าวสาร?',
-    html: `หัวข้อ: <b>${payload.subject}</b><br><span class="text-sm text-slate-500">ระบบจะส่งอีเมลไปยังสมาชิกตามเงื่อนไขที่เลือกทันที ไม่สามารถยกเลิกได้หลังกดส่ง</span>`,
+    html: `หัวข้อ: <b>${payload.subject}</b>${imageNote}<br><span class="text-sm text-slate-500">ระบบจะส่งอีเมลไปยังสมาชิกตามเงื่อนไขที่เลือกทันที ไม่สามารถยกเลิกได้หลังกดส่ง</span>`,
     icon: 'question',
     showCancelButton: true,
     confirmButtonText: 'ยืนยันส่งเลย',
@@ -1477,13 +1578,14 @@ function confirmAndSendNewsletter(payload) {
     confirmButtonColor: '#4338ca'
   }).then((r) => {
     if (!r.isConfirmed) return;
-    Swal.fire({ title: 'กำลังส่งข่าวสาร...', text: 'อาจใช้เวลาสักครู่หากมีสมาชิกจำนวนมาก ห้ามปิดหน้าจอ', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    Swal.fire({ title: 'กำลังส่งข่าวสาร...', text: 'อาจใช้เวลาสักครู่หากมีสมาชิกจำนวนมากหรือมีรูปแนบ ห้ามปิดหน้าจอ', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
     TUSW_API.call('sendNewsletterToMembers', {
       subject: payload.subject,
       message: payload.message,
       filters: payload.filters,
-      adminName: currentAdminName
+      adminName: currentAdminName,
+      images: payload.images || []
     }).then(res => {
       if (res.success) {
         Swal.fire({
