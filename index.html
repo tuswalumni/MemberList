@@ -1,31 +1,1366 @@
 <!DOCTYPE html>
-<html lang="th">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบฐานข้อมูลสมาชิก (Admin) | สมาคมนักศึกษาเก่าสังคมสงเคราะห์ศาสตร์ มธ.</title> <link rel="icon" type="image/png" href="https://img2.pic.in.th/cropped_circle_image4abd3ce094449065.png">
-    <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            overflow: hidden; /* ซ่อน Scrollbar ของหน้าหลัก */
-        }
-        iframe {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ฐานข้อมูลสมาชิกสมาคมฯ (Admin)</title><link rel="icon" type="image/png" href="https://img2.pic.in.th/cropped_circle_image4abd3ce094449065.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+  <style>
+    body { font-family: 'Sarabun', sans-serif; background-color: #f8fafc; font-size: 14px; }
+    .animate-fadeIn { animation: fadeIn 0.4s ease-out forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    
+    /* DataTable Customization */
+    table.dataTable { border-collapse: collapse !important; width: 100% !important; border: none !important; }
+    table.dataTable thead th { 
+      background-color: #f8fafc; color: #475569; font-weight: 800; 
+      border-bottom: 2px solid #e2e8f0 !important; font-size: 13px; padding: 15px 10px !important;
+    }
+    table.dataTable tbody td { padding: 12px 10px !important; vertical-align: middle; border-bottom: 1px solid #f1f5f9 !important; }
+    
+    @keyframes pulse-red {
+      0%, 100% { background-color: #dc2626; box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
+      50% { background-color: #ef4444; box-shadow: 0 0 10px 4px rgba(220, 38, 38, 0.3); }
+    }
+    .btn-objection-alert { animation: pulse-red 1.5s infinite; color: white !important; border: none !important; }
+    .dataTables_wrapper .dataTables_filter input { border: 1px solid #e2e8f0; border-radius: 12px; padding: 8px 16px; outline: none; }
+
+    /* Honorary panel styles (เดิมจาก HonoraryForm.html) */
+    .form-input-h {
+      width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 12px;
+      outline: none; transition: all 0.2s; background-color: #f8fafc; font-weight: 700;
+    }
+    .form-input-h:focus { border-color: #059669; background-color: #ffffff; box-shadow: 0 4px 6px -1px rgba(5, 150, 105, 0.1); }
+    .form-input-h:disabled { background-color: #f1f5f9; cursor: not-allowed; opacity: 0.7; }
+    #honoraryModal label { font-weight: 800; color: #475569; font-size: 13px; margin-bottom: 6px; display: block; }
+    .required-star-h::after { content: " *"; color: #ef4444; }
+  </style>
 </head>
-<body>
+<body class="p-4 md:p-8">
 
-    <iframe src="https://script.google.com/macros/s/AKfycbwBqeqG9yu5y-PCKjr5hbgevTuKVjS9oDNbDFCbhxwvj4GX4jDSNEk9tKyOh3qw-J2h/exec?page=members">
-        เบราว์เซอร์ของคุณไม่รองรับการแสดงผล iframe
-    </iframe>
+  <div class="max-w-7xl mx-auto bg-white p-6 md:p-10 rounded-[2.5rem] shadow-2xl border border-slate-100 animate-fadeIn">
+    
+    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-10 gap-6">
+      <div class="flex items-center space-x-5">
+        <div class="p-1 bg-white rounded-full shadow-md border border-slate-100">
+          <img src="https://img2.pic.in.th/cropped_circle_image4abd3ce094449065.png" class="w-16 h-16 rounded-full" alt="Logo">
+        </div>
+        <div>
+          <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight">ฐานข้อมูลสมาชิกสมาคมฯ</h1>
+          <p class="text-slate-400 font-medium text-xs mt-1 uppercase tracking-widest flex items-center">
+            <i data-lucide="shield-check" class="w-3 h-3 mr-1 text-emerald-500"></i> สมาคมนักศึกษาเก่าสังคมสงเคราะห์ศาสตร์ มธ.
+          </p>
+        </div>
+      </div>
+      
+      <div class="flex flex-wrap gap-3 w-full lg:w-auto">
+        <a href="#" data-page="honorary" class="nav-admin-link flex-1 lg:flex-none inline-flex items-center justify-center px-6 py-3 bg-emerald-600 text-white text-xs font-black rounded-2xl hover:bg-emerald-700 transition-all shadow-lg border-b-4 border-emerald-800 active:border-b-0 active:translate-y-0">
+          <i data-lucide="crown" class="w-4 h-4 mr-2"></i> เพิ่มสมาชิกกิตติมศักดิ์
+        </a>
+        <a href="#" data-page="dashboard" class="nav-admin-link flex-1 lg:flex-none inline-flex items-center justify-center px-6 py-3 bg-slate-800 text-white text-xs font-extrabold rounded-2xl hover:bg-slate-900 transition-all shadow-lg">
+          <i data-lucide="layout-dashboard" class="w-4 h-4 mr-2"></i> DASHBOARD
+        </a>
+        <button onclick="loadData()" class="flex-1 lg:flex-none inline-flex items-center justify-center px-6 py-3 bg-white text-slate-600 text-xs font-extrabold rounded-2xl border-2 border-slate-100 hover:bg-slate-50 transition-all">
+          <i data-lucide="refresh-cw" class="w-4 h-4 mr-2"></i> REFRESH
+        </button>
+        <button onclick="adminLogout()" class="flex-1 lg:flex-none inline-flex items-center justify-center px-6 py-3 bg-red-50 text-red-600 text-xs font-extrabold rounded-2xl border-2 border-red-100 hover:bg-red-100 transition-all">
+          <i data-lucide="log-out" class="w-4 h-4 mr-2"></i> ออกจากระบบ
+        </button>
+      </div>
+    </div>
 
+    <div class="bg-slate-50/80 backdrop-blur-sm p-6 rounded-[2rem] mb-10 border border-slate-100">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="space-y-2">
+          <label class="text-xs font-bold text-slate-600 ml-1">ประเภทสมาชิก</label>
+          <select id="typeFilter" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl font-bold text-slate-700 outline-none focus:border-emerald-500 shadow-sm cursor-pointer">
+            <option value="">ทั้งหมด</option>
+            <option value="สามัญ">สามัญ</option>
+            <option value="สมทบ">สมทบ</option>
+            <option value="กิตติมศักดิ์">กิตติมศักดิ์</option>
+          </select>
+        </div>
+        <div class="space-y-2">
+          <label class="text-xs font-bold text-slate-600 ml-1">สถานะสมาชิก</label>
+          <select id="statusFilter" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl font-bold text-slate-700 outline-none focus:border-red-500 shadow-sm cursor-pointer">
+            <option value="">ทั้งหมด</option>
+            <option value="สมาชิกสมบูรณ์">สมาชิกสมบูรณ์</option>
+            <option value="รอชำระเงิน">รอชำระเงิน</option>
+            <option value="รอการตรวจสอบ/คัดค้าน">รอการตรวจสอบ/คัดค้าน</option>
+            <option value="ถูกคัดค้าน/รอแอดมินตรวจสอบ">ถูกคัดค้าน (ต้องพิจารณา)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <input type="file" id="importFile" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleImport(this)">
+
+    <div class="overflow-x-auto min-h-[400px]">
+      <table id="memberTable" class="display w-full">
+        <thead>
+          <tr>
+            <th class="w-[10%]">รหัสสมาชิก</th>
+            <th class="w-[20%]">ชื่อ-นามสกุล</th>
+            <th class="w-[10%]">ประเภท</th>
+            <th class="w-[15%]">เบอร์โทรศัพท์</th>
+            <th class="w-[15%]">วันหมดอายุ</th>
+            <th class="w-[15%]">สถานะ</th>
+            <th class="w-[15%] text-center">จัดการ</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+<div id="cardContainer" class="hidden fixed inset-0 bg-slate-900/90 z-[100] flex items-center justify-center p-4 backdrop-blur-sm transition-all duration-300">
+  <div class="bg-white rounded-[2.5rem] p-8 max-w-2xl w-full shadow-2xl text-center border border-slate-100 relative">
+    
+    <button onclick="document.getElementById('cardContainer').classList.add('hidden')" class="absolute top-6 right-6 p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition text-slate-500">
+      <i data-lucide="x" class="w-6 h-6"></i>
+    </button>
+
+    <div class="mb-6">
+      <h3 class="text-2xl font-black text-slate-800 flex items-center justify-center gap-3">
+        <div class="p-2 bg-indigo-50 rounded-xl"><i data-lucide="id-card" class="text-indigo-600 w-6 h-6"></i></div>
+        บัตรสมาชิกดิจิทัล
+      </h3>
+      <p class="text-slate-400 text-sm font-bold mt-2">ตัวอย่างการแสดงผลจริง</p>
+    </div>
+
+    <div class="flex justify-center mb-8">
+       <div class="relative group shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] rounded-[25px]">
+          <canvas id="memberCardCanvas" width="600" height="350" class="w-full max-w-[600px] h-auto rounded-[25px]"></canvas>
+       </div>
+    </div>
+
+    <div class="flex gap-4 justify-center">
+      <button onclick="downloadCard()" class="bg-emerald-600 text-white py-3 px-8 rounded-2xl font-black hover:bg-emerald-700 transition flex items-center gap-2 shadow-lg shadow-emerald-200 transform hover:-translate-y-1">
+        <i data-lucide="download"></i> ดาวน์โหลดรูปภาพ
+      </button>
+      <button onclick="document.getElementById('cardContainer').classList.add('hidden')" class="bg-white text-slate-600 border-2 border-slate-200 py-3 px-8 rounded-2xl font-bold hover:bg-slate-50 transition">
+        ปิดหน้าต่าง
+      </button>
+    </div>
+  </div>
+</div>
+  </div>
+
+  <!-- ============================================================
+       ✅ HONORARY MEMBER PANEL (ฝังในหน้านี้แทนที่จะแยก repo)
+       เดิมคือหน้า HonoraryForm.html แยกต่างหาก ตอนนี้เปิดเป็น Modal ในหน้าเดียวกัน
+       ============================================================ -->
+  <div id="honoraryModal" class="hidden fixed inset-0 bg-slate-900/90 z-[200] flex items-start justify-center p-4 overflow-y-auto backdrop-blur-sm">
+    <div class="max-w-4xl w-full my-8">
+      <div class="flex items-center justify-between mb-6">
+        <button type="button" onclick="closeHonoraryPanel()" class="inline-flex items-center gap-2 text-slate-200 hover:text-white font-bold transition-colors">
+          <i data-lucide="chevron-left" class="w-5 h-5"></i> ย้อนกลับหน้าจัดการสมาชิก
+        </button>
+        <div class="flex items-center gap-2">
+          <span class="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-black uppercase tracking-widest">
+            <i data-lucide="crown" class="w-3 h-3 inline-block mr-1"></i> Admin Mode
+          </span>
+        </div>
+      </div>
+
+      <div class="bg-white p-8 md:p-12 rounded-[2.5rem] shadow-2xl border border-emerald-50 animate-fadeIn">
+        <div class="text-center mb-12">
+          <div class="p-1 bg-white rounded-full shadow-md border border-emerald-50 mb-6 inline-block">
+            <img src="https://img2.pic.in.th/cropped_circle_image4abd3ce094449065.png" class="w-28 h-28 rounded-full" alt="Logo">
+          </div>
+          <h1 class="text-3xl font-black text-slate-800 tracking-tight leading-tight">ลงทะเบียนสมาชิกกิตติมศักดิ์</h1>
+          <p class="text-emerald-600 font-extrabold mt-4 uppercase tracking-wider text-m">สมาคมนักศึกษาเก่าสังคมสงเคราะห์ศาสตร์ มหาวิทยาลัยธรรมศาสตร์</p>
+          <div class="h-1.5 w-20 bg-emerald-500 mx-auto mt-3 rounded-full"></div>
+        </div>
+
+        <form id="honoraryForm" class="space-y-8" onsubmit="handleHonorarySubmit(this)">
+
+          <div class="space-y-6">
+            <h2 class="text-lg font-extrabold text-slate-700 flex items-center">
+              <span class="w-2 h-6 bg-emerald-500 rounded-full mr-3"></span>ข้อมูลส่วนบุคคล
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-6 gap-5">
+              <div class="md:col-span-1">
+                <label class="required-star-h">คำนำหน้า</label>
+                <select name="title" class="form-input-h" required>
+                  <option value="นาย">นาย</option>
+                  <option value="นาง">นาง</option>
+                  <option value="นางสาว">นางสาว</option>
+                  <option value="ดร.">ดร.</option>
+                  <option value="ศ.ดร.">ศ.ดร.</option>
+                  <option value="รศ.ดร.">รศ.ดร.</option>
+                  <option value="ผศ.ดร.">ผศ.ดร.</option>
+                </select>
+              </div>
+              <div class="md:col-span-2">
+                <label class="required-star-h">ชื่อ (ภาษาไทย)</label>
+                <input type="text" name="fname" class="form-input-h" placeholder="ชื่อจริง" required>
+              </div>
+              <div class="md:col-span-3">
+                <label class="required-star-h">นามสกุล (ภาษาไทย)</label>
+                <input type="text" name="lname" class="form-input-h" placeholder="นามสกุล" required>
+              </div>
+              <div class="md:col-span-3">
+                <label class="required-star-h uppercase">เลขประจำตัวประชาชน (13 หลัก)</label>
+                <input type="text" name="idCard" maxlength="13" minlength="13" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="form-input-h" placeholder="เฉพาะตัวเลข" required>
+              </div>
+              <div class="md:col-span-3">
+                <label class="required-star-h">วัน/เดือน/ปีเกิด</label>
+                <input type="date" name="dob" class="form-input-h" required>
+              </div>
+            </div>
+          </div>
+
+          <hr class="border-slate-100">
+
+          <div class="space-y-5">
+            <h2 class="text-lg font-extrabold text-slate-700 flex items-center">
+              <span class="w-2 h-6 bg-emerald-500 rounded-full mr-3"></span>ที่อยู่สำหรับติดต่อ
+            </h2>
+
+            <div class="space-y-4">
+              <div>
+                <label class="required-star-h">รายละเอียดที่อยู่</label>
+                <input type="text" name="addr_main" placeholder="บ้านเลขที่, หมู่บ้าน, อาคาร/ชั้น, ซอย, ถนน" class="form-input-h" required>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="required-star-h">จังหวัด</label>
+                  <select id="hon_addr_province" name="addr_province" onchange="honUpdateAmphure()" class="form-input-h" required>
+                    <option value="">เลือกจังหวัด</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="required-star-h">อำเภอ/เขต</label>
+                  <select id="hon_addr_amphure" name="addr_district" onchange="honUpdateTambon()" class="form-input-h" required disabled>
+                    <option value="">เลือกอำเภอ/เขต</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="required-star-h">ตำบล/แขวง</label>
+                  <select id="hon_addr_tambon" name="addr_subdistrict" onchange="honUpdateZipcode()" class="form-input-h" required disabled>
+                    <option value="">เลือกตำบล/แขวง</option>
+                  </select>
+                </div>
+                <div>
+                  <label>รหัสไปรษณีย์</label>
+                  <input type="text" name="addr_zipcode" id="hon_addr_zipcode" placeholder="รหัสไปรษณีย์" readonly class="form-input-h bg-slate-100 cursor-not-allowed">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <hr class="border-slate-100">
+
+          <div class="space-y-6">
+            <h2 class="text-lg font-extrabold text-slate-700 flex items-center">
+              <span class="w-2 h-6 bg-emerald-500 rounded-full mr-3"></span>การทำงานและการติดต่อ
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label class="required-star-h">เบอร์โทรศัพท์</label>
+                <input type="tel" name="phone" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="form-input-h" placeholder="0XXXXXXXXX" required>
+              </div>
+              <div>
+                <label class="required-star-h">อีเมล</label>
+                <input type="email" name="email" class="form-input-h" placeholder="example@email.com" required>
+              </div>
+              <div>
+                <label>ตำแหน่งปัจจุบัน</label>
+                <input type="text" name="position" class="form-input-h" placeholder="ระบุตำแหน่ง">
+              </div>
+              <div>
+                <label>หน่วยงาน/ที่ทำงาน</label>
+                <input type="text" name="workplace" class="form-input-h" placeholder="ระบุชื่อหน่วยงาน">
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-6">
+            <button type="submit" class="w-full bg-emerald-600 text-white py-5 rounded-3xl font-black text-lg hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-200 transform hover:-translate-y-1 flex items-center justify-center gap-3">
+              <i data-lucide="save" class="w-6 h-6"></i> บันทึกข้อมูลสมาชิกกิตติมศักดิ์
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+  <canvas id="honoraryCardCanvas" width="600" height="350" style="display:none;"></canvas>
+
+  <script src="api-client.js"></script>
+  <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <script>
+    // ✅ ตั้งค่า URL ของเว็บอื่นๆ ในระบบ (คนละ Repo/Domain) — แก้ให้ตรงกับ URL จริงหลัง Deploy
+    const ADMIN_URLS = {
+      dashboard: "https://dashboard.tuswalumni.com/",
+    };
+
+    let table = null;
+
+    let currentAdminName = ""; 
+
+    // ✅ Preload โลโก้ผ่าน Server (Base64) เพื่อหลีกเลี่ยง CORS
+    window.cachedLogoImg = null;
+    TUSW_API.call('getLogoBase64', {}).then(function(b64) {
+        if (!b64) return;
+        const img = new Image();
+        img.onload = () => { window.cachedLogoImg = img; };
+        img.src = b64;
+    }).catch(function(err) { console.error(err); });
+
+    $(document).ready(function() {
+      lucide.createIcons();
+      showAdminLoginPopup(); 
+      
+      $('#typeFilter, #statusFilter').on('change', function() {
+        if (!table) return;
+        const typeVal = $('#typeFilter').val();
+        const statusVal = $('#statusFilter').val();
+        table.column(2).search(typeVal ? '^' + typeVal + '$' : '', true, false); 
+        table.column(5).search(statusVal ? '^' + statusVal + '$' : '', true, false); 
+        table.draw();
+      });
+
+      // nav-admin-link: honorary เปิดเป็น section ในหน้านี้เอง, dashboard ลิงก์ไป repo แยก
+      (function() {
+        document.querySelectorAll('.nav-admin-link').forEach(link => {
+          const page = link.getAttribute('data-page');
+          if (page === 'honorary') {
+            link.removeAttribute('href');
+            link.addEventListener('click', function(e) { e.preventDefault(); openHonoraryPanel(); });
+          } else if (page === 'dashboard') {
+            link.href = ADMIN_URLS.dashboard;
+          }
+        });
+      })();
+    });
+
+    function showAdminLoginPopup() {
+      // ตรวจสอบ session token ที่มีอยู่ก่อน
+      const savedToken = sessionStorage.getItem('adminToken');
+      const savedName = sessionStorage.getItem('adminName');
+      if (savedToken && savedName) {
+        currentAdminName = savedName;
+        loadData();
+        return;
+      }
+
+      Swal.fire({
+        title: 'ADMIN LOGIN',
+        html: `<div class="p-2 space-y-4">
+               <div class="text-left"><label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Username</label><input id="swal-username" class="swal2-input !m-0 !w-full !rounded-xl" placeholder="ระบุชื่อผู้ใช้" onkeydown="if(event.key==='Enter') document.querySelector('.swal2-confirm').click()"></div>
+               <div class="text-left"><label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Password</label><input id="swal-password" type="password" class="swal2-input !m-0 !w-full !rounded-xl" placeholder="ระบุรหัสผ่าน" onkeydown="if(event.key==='Enter') document.querySelector('.swal2-confirm').click()"></div></div>`,
+        focusConfirm: false, allowOutsideClick: false, confirmButtonText: 'เข้าสู่ระบบ', confirmButtonColor: '#1e293b',
+        preConfirm: () => {
+          const user = document.getElementById('swal-username').value.trim();
+          const pass = document.getElementById('swal-password').value.trim();
+          if (!user || !pass) return Swal.showValidationMessage('กรุณากรอกข้อมูลให้ครบถ้วน');
+          return { user, pass };
+        }
+      }).then((result) => {
+        if (result.isConfirmed) {
+          Swal.fire({ title: 'กำลังตรวจสอบสิทธิ์...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+          // ✅ ใช้ adminLoginWithToken แทน adminLogin
+          TUSW_API.call('adminLoginWithToken', { u: result.value.user, p: result.value.pass }).then(res => {
+            if (res.success) {
+              currentAdminName = res.adminName;
+              // บันทึก session token ใน sessionStorage (ไม่อยู่ใน URL)
+              sessionStorage.setItem('adminToken', res.token);
+              sessionStorage.setItem('adminName', res.adminName);
+              Swal.fire({ icon: 'success', title: 'สำเร็จ', text: 'ยินดีต้อนรับ คุณ' + res.adminName, timer: 1500, showConfirmButton: false });
+              loadData(); 
+            } else {
+              Swal.fire({ icon: 'error', title: 'ล้มเหลว', text: res.message }).then(() => showAdminLoginPopup());
+            }
+          }).catch(err => {
+            Swal.fire({ icon: 'error', title: 'เชื่อมต่อไม่ได้', text: err.message }).then(() => showAdminLoginPopup());
+          });
+        }
+      });
+    }
+
+    function loadData() {
+      Swal.fire({ title: 'กำลังโหลดข้อมูลสมาชิก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      
+      TUSW_API.call('getAllMembersData', {}).then(function(data) {
+        Swal.close();
+        if ($.fn.DataTable.isDataTable('#memberTable')) { 
+          $('#memberTable').DataTable().clear().destroy(); 
+          $('#tableBody').empty(); 
+        }
+        
+        let html = '';
+        if (!data || data.length === 0) {
+          // ✅ ตรวจสอบ: colspan ต้องเท่ากับ 7
+          html = `<tr><td colspan="7" class="text-center py-10 text-slate-400 italic">ไม่พบข้อมูลสมาชิกในระบบ</td></tr>`;
+        } else {
+          data.forEach(m => {
+            const isObjected = (m.status === 'ถูกคัดค้าน/รอแอดมินตรวจสอบ');
+            const isPendingSlip = (m.status === 'รอตรวจสอบ'); // ✅ เช็คสถานะรอตรวจสอบสลิป
+            
+            // จัดการสีของสถานะ
+            const statusClass = isObjected ? 'text-red-600 font-black animate-pulse' : 
+                                isPendingSlip ? 'text-orange-600 font-bold bg-orange-50' :
+                                m.status === 'สมาชิกสมบูรณ์' ? 'text-emerald-600 font-extrabold bg-emerald-50' : 
+                                m.status === 'หมดอายุ' ? 'text-red-500 font-bold' : 'text-slate-500 font-bold';
+            
+            const typeClass = m.type === 'สามัญ' ? 'bg-red-50 text-red-700' : m.type === 'สมทบ' ? 'bg-blue-50 text-blue-700' : 'bg-emerald-50 text-emerald-700';
+            let displayExpiry = (m.type === 'สามัญ' || m.type === 'กิตติมศักดิ์') ? '<span class="text-emerald-600 font-bold">ตลอดชีพ</span>' : (m.expiry || '<span class="text-slate-300 italic">ไม่ระบุ</span>');
+            const mStr = btoa(unescape(encodeURIComponent(JSON.stringify(m)))); 
+
+            // 🎯 สร้างชุดปุ่มจัดการ (Action Buttons) แยกออกมาเพื่อให้โค้ดดูง่ายขึ้น
+            let actionButtons = '';
+            
+            if (isObjected) {
+                actionButtons += `<button onclick='reviewObjection(JSON.parse(decodeURIComponent(escape(atob("${mStr}")))))' class="p-2 btn-objection-alert rounded-lg font-black px-3 transition"><i data-lucide="alert-triangle" class="w-4 h-4"></i></button>`;
+            } else {
+                // ✅ เพิ่มปุ่มอนุมัติสลิป (สีเขียว) เฉพาะคนที่สถานะ "รอตรวจสอบ"
+                if (isPendingSlip) {
+                    actionButtons += `<button onclick="approveSlip('${m.sheetName}', ${m.rowId}, '${m.name}')" class="p-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-600 hover:text-white transition shadow-sm border border-emerald-100" title="อนุมัติสลิป (ผ่านแล้ว)"><i data-lucide="check-circle" class="w-4 h-4"></i></button>`;
+                }
+                
+                // ปุ่มพื้นฐาน (ดูบัตร, ประวัติ, แก้ไข)
+                actionButtons += `
+                    <button onclick='viewCard(JSON.parse(decodeURIComponent(escape(atob("${mStr}")))))' class="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition shadow-sm border border-blue-100" title="ดูบัตรสมาชิก"><i data-lucide="contact-2" class="w-4 h-4"></i></button>
+                    <button onclick='viewHistory("${m.id}", "${m.name}")' class="p-2 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-600 hover:text-white transition border border-purple-100" title="ประวัติการต่ออายุ"><i data-lucide="history" class="w-4 h-4"></i></button>
+                    <button onclick='editMember(JSON.parse(decodeURIComponent(escape(atob("${mStr}")))))' class="p-2 bg-amber-50 text-amber-600 rounded-lg hover:bg-amber-600 hover:text-white transition border border-amber-100" title="แก้ไขข้อมูล"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                `;
+            }
+            
+            // ปุ่มลบข้อมูล (แสดงเสมอ)
+            actionButtons += `<button onclick='confirmDelete(JSON.parse(decodeURIComponent(escape(atob("${mStr}")))))' class="p-2 bg-slate-50 text-slate-400 rounded-lg hover:bg-red-600 hover:text-white transition border border-slate-100" title="ลบข้อมูล"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`;
+
+
+            // สร้าง HTML แถวของตาราง
+            html += `<tr>
+                <td>${m.id || 'รอรหัส'}</td>
+                <td class="font-bold text-slate-800">${m.name}</td>
+                <td><span class="px-3 py-1 rounded-lg text-[11px] border ${typeClass}">${m.type}</span></td>
+                <td class="font-mono font-bold">${formatPhone(m.phone)}</td>
+                <td>${displayExpiry}</td>
+                <td>${isObjected ? `<span class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-red-100 text-red-700 text-[10px] font-black border border-red-200 shadow-sm animate-pulse"><i data-lucide="alert-triangle" class="w-3 h-3"></i> พิจารณาด่วน</span>` : `<span class="px-2 py-1 rounded-md text-[11px] uppercase ${statusClass}">${m.status}</span>`}</td>
+                <td class="text-center">
+                    <div class="flex justify-center gap-1">
+                      ${actionButtons}
+                    </div>
+                </td>
+              </tr>`;
+          });
+        }
+        
+        $('#tableBody').html(html);
+        table = $('#memberTable').DataTable({
+          dom: 'Bfrtip', responsive: true, pageLength: 50, order: [[5, 'desc'], [0, 'desc']],
+          buttons: [
+            { text: 'DOWNLOAD TEMPLATE', className: '!rounded-2xl !bg-indigo-600 !text-white mr-2', action: () => downloadImportTemplate() },
+            { text: 'IMPORT EXCEL', className: '!rounded-2xl !bg-emerald-600 !text-white mr-2', action: () => document.getElementById('importFile').click() },
+            { extend: 'excelHtml5', text: 'EXPORT DATA', className: '!rounded-2xl !bg-amber-600 !text-white' }
+          ],
+          drawCallback: () => { if (typeof lucide !== 'undefined') lucide.createIcons(); }
+        });
+      }).catch(err => { Swal.close(); Swal.fire('เกิดข้อผิดพลาด', err.message, 'error'); });
+}
+
+ // --------------------------------------------------------
+// แก้ไขฟังก์ชัน reviewObjection ในไฟล์ MemberList.html
+// --------------------------------------------------------
+
+function reviewObjection(m) {
+    // 1. เตรียมตัวแปรสำหรับแยกข้อมูล
+    let rawNote = m.objectionNote || '';
+    let objector = 'ไม่ระบุ';
+    let reason = rawNote; // ค่าเริ่มต้นคือข้อความทั้งหมด
+    let time = '-';
+
+    // 2. แยกข้อมูลจากรูปแบบ: "[คัดค้าน] โดย: ชื่อ | เหตุผล: ข้อความ | เมื่อ: เวลา"
+    if (rawNote.includes('|')) {
+        let parts = rawNote.split('|');
+        parts.forEach(p => {
+            if (p.includes('โดย:')) objector = p.split('โดย:')[1].trim();
+            if (p.includes('เหตุผล:')) reason = p.split('เหตุผล:')[1].trim();
+            if (p.includes('เมื่อ:')) time = p.split('เมื่อ:')[1].trim();
+        });
+    }
+
+    // 3. แสดง Popup สวยงาม
+    Swal.fire({
+      title: '⚠️ พิจารณาการคัดค้าน',
+      html: `
+        <div class="text-left space-y-4">
+          <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+            <p class="text-[10px] font-bold text-slate-400 uppercase">ผู้สมัคร (ผู้ถูกคัดค้าน)</p>
+            <p class="text-lg font-black text-slate-800">${m.name}</p>
+            <p class="text-xs text-slate-500">รหัสบัตร: ${m.idCard}</p>
+          </div>
+
+          <div class="bg-red-50 p-4 rounded-xl border-2 border-red-100 relative">
+            <div class="absolute -top-3 left-4 bg-red-600 text-white px-2 py-0.5 rounded text-[10px] font-bold uppercase">
+              Objection Detail
+            </div>
+            
+            <div class="mt-2 mb-3">
+              <p class="text-[11px] font-bold text-red-800 uppercase flex items-center gap-1">
+                <i data-lucide="user-x" class="w-3 h-3"></i> ผู้คัดค้าน:
+              </p>
+              <p class="text-sm font-black text-red-700 ml-4 border-b border-red-100 pb-1 mb-2">${objector}</p>
+              
+              <p class="text-[11px] font-bold text-red-800 uppercase flex items-center gap-1">
+                <i data-lucide="message-square" class="w-3 h-3"></i> เหตุผล:
+              </p>
+              <p class="text-sm font-medium text-slate-700 ml-4 bg-white/50 p-2 rounded-lg border border-red-100">
+                ${reason}
+              </p>
+            </div>
+            
+            <p class="text-[10px] text-right text-red-400 italic mt-2">แจ้งเมื่อ: ${time}</p>
+          </div>
+        </div>
+      `,
+      showDenyButton: true,
+      showCancelButton: true,
+      confirmButtonText: '<i data-lucide="check-circle"></i> อนุมัติให้ผ่าน (ยกเลิกคัดค้าน)',
+      denyButtonText: '<i data-lucide="x-circle"></i> ปฏิเสธการสมัคร (ยืนยันคัดค้าน)',
+      cancelButtonText: 'ปิดหน้าต่าง',
+      confirmButtonColor: '#059669', // เขียว
+      denyButtonColor: '#dc2626',    // แดง
+      customClass: {
+        popup: 'rounded-[2rem] w-full max-w-lg',
+        confirmButton: 'rounded-xl text-sm font-bold',
+        denyButton: 'rounded-xl text-sm font-bold',
+        cancelButton: 'rounded-xl text-sm font-bold text-white-500'
+      },
+      didOpen: () => {
+        if(typeof lucide !== 'undefined') lucide.createIcons();
+      }
+    }).then((result) => {
+      if (result.isConfirmed || result.isDenied) {
+        // approve = อนุมัติผู้สมัคร (ให้ผ่าน), reject = ปฏิเสธผู้สมัคร (เชื่อตามคำคัดค้าน)
+        const decision = result.isConfirmed ? 'approve' : 'reject';
+        
+        // Confirm อีกครั้งเพื่อความชัวร์
+        let actionText = result.isConfirmed ? "อนุมัติให้ผู้สมัครผ่านการตรวจสอบ?" : "ปฏิเสธการสมัครของท่านนี้?";
+        
+        Swal.fire({
+            title: 'ยืนยันการตัดสินใจ',
+            text: actionText,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'ยืนยัน',
+            confirmButtonColor: '#1e293b'
+        }).then((confirmRes) => {
+            if (confirmRes.isConfirmed) {
+                Swal.fire({ title: 'กำลังบันทึกผล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                
+                TUSW_API.call('adminClearObjection', { sheetName: m.sheetName, rowId: m.rowId, decision: decision }).then(res => {
+                  Swal.fire({ 
+                    icon: res.success ? 'success' : 'error', 
+                    title: res.success ? 'บันทึกสำเร็จ' : 'เกิดข้อผิดพลาด', 
+                    text: res.message 
+                  });
+                  loadData(); // รีโหลดตาราง
+                }).catch(err => { Swal.fire('เกิดข้อผิดพลาด', err.message, 'error'); });
+            }
+        });
+      }
+    });
+}
+
+function viewCard(m) {
+    document.getElementById('cardContainer').classList.remove('hidden');
+    drawMemberCard(m);
+    
+    // เรียก Icon ให้ทำงานใหม่ใน Modal
+    if(typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function drawMemberCard(m) {
+    const canvas = document.getElementById('memberCardCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    function renderCard(logoImg) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const grad = ctx.createLinearGradient(0, 0, 600, 350);
+        if (m.type.includes('สามัญ')) {
+            grad.addColorStop(0, '#991b1b'); grad.addColorStop(1, '#450a0a');
+        } else if (m.type.includes('กิตติมศักดิ์')) {
+            grad.addColorStop(0, '#14532d'); grad.addColorStop(1, '#064e3b');
+        } else {
+            grad.addColorStop(0, '#1e1b4b'); grad.addColorStop(1, '#312e81');
+        }
+
+        const r=25, w=600, h=350;
+        ctx.fillStyle=grad;
+        ctx.beginPath();
+        ctx.moveTo(r,0); ctx.lineTo(w-r,0); ctx.quadraticCurveTo(w,0,w,r);
+        ctx.lineTo(w,h-r); ctx.quadraticCurveTo(w,h,w-r,h);
+        ctx.lineTo(r,h); ctx.quadraticCurveTo(0,h,0,h-r);
+        ctx.lineTo(0,r); ctx.quadraticCurveTo(0,0,r,0); ctx.fill();
+
+        ctx.beginPath(); ctx.strokeStyle="rgba(255,255,255,0.05)"; ctx.lineWidth=60;
+        ctx.arc(600,350,220,0,Math.PI*2); ctx.stroke();
+        ctx.beginPath(); ctx.strokeStyle="rgba(255,255,255,0.03)"; ctx.lineWidth=1;
+        for(let i=-100;i<800;i+=15){ctx.moveTo(i,0);ctx.lineTo(i+200,350);}
+        ctx.stroke();
+
+        if (logoImg && logoImg.complete && logoImg.naturalWidth > 0) {
+            ctx.save();
+            ctx.beginPath(); ctx.arc(517,77,47,0,Math.PI*2); ctx.clip();
+            ctx.drawImage(logoImg,470,30,95,95); ctx.restore();
+        } else {
+            ctx.fillStyle="rgba(255,255,255,0.15)";
+            ctx.beginPath(); ctx.arc(517,77,47,0,Math.PI*2); ctx.fill();
+            ctx.fillStyle="rgba(255,255,255,0.5)";
+            ctx.font="bold 12px Sarabun"; ctx.textAlign="center"; ctx.textBaseline="middle";
+            ctx.fillText("มธ.",517,77); ctx.textAlign="left"; ctx.textBaseline="top";
+        }
+
+        ctx.textBaseline="top"; ctx.fillStyle="white";
+        ctx.font="bold 22px Sarabun";
+        ctx.fillText("สมาคมนักศึกษาเก่าสังคมสงเคราะห์ศาสตร์ มธ.",35,45);
+        ctx.font="13px Sarabun"; ctx.fillStyle="rgba(255,255,255,0.6)";
+        ctx.fillText("TU SOCIAL ADMINISTRATION ALUMNI ASSOCIATION",35,75);
+        ctx.fillStyle="white"; ctx.font="38px Sarabun";
+        ctx.fillText(m.name,35,155);
+        ctx.font="bold 64px Sarabun";
+        ctx.fillStyle=m.type.includes('สมทบ')?"#f1f5f9":"#fbbf24";
+        ctx.fillText(m.id||'PENDING',35,200);
+        ctx.font="bold 20px Sarabun"; ctx.fillStyle="white";
+        ctx.fillText("ประเภท: "+m.type,35,288);
+        ctx.font="15px Sarabun"; ctx.fillStyle="rgba(255,255,255,0.8)";
+        let expiryText = m.expiry;
+        if(m.type.includes('สามัญ')||m.type.includes('กิตติมศักดิ์')) expiryText='ตลอดชีพ';
+        ctx.fillText("สถานะ: "+m.status+" | หมดอายุ: "+(expiryText||'-'),35,316);
+    }
+
+    renderCard(null);
+
+    // ✅ ใช้ cachedLogoImg ถ้ามี (โหลดครั้งเดียวตอน page load)
+    if (window.cachedLogoImg && window.cachedLogoImg.complete && window.cachedLogoImg.naturalWidth > 0) {
+        renderCard(window.cachedLogoImg);
+    }
+}
+function downloadCard() {
+    const canvas = document.getElementById('memberCardCanvas');
+    const link = document.createElement('a');
+    link.download = `TU_Alumni_Card_${new Date().getTime()}.png`;
+    link.href = canvas.toDataURL('image/png', 1.0); // คุณภาพสูงสุด
+    link.click();
+}
+
+// -----------------------------------------------------
+    // ฟังก์ชันแก้ไขข้อมูลสมาชิก (แบบละเอียด)
+    // -----------------------------------------------------
+    function editMember(m) {
+      Swal.fire({
+        title: '✏️ แก้ไขข้อมูลสมาชิก',
+        html: `
+          <div class="text-left space-y-4 pt-2">
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 mb-4">
+               <p class="text-xs text-slate-400 font-bold">สมาชิก:</p>
+               <p class="font-black text-slate-800 text-lg">${m.name}</p>
+               <p class="text-xs text-slate-500">รหัส: ${m.id}</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-500 mb-1">เบอร์โทรศัพท์</label>
+                <input id="ed_phone" value="${m.phone}" class="w-full p-2 border rounded-lg font-bold text-slate-700">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-500 mb-1">อีเมล</label>
+                <input id="ed_email" value="${m.email}" class="w-full p-2 border rounded-lg font-bold text-slate-700">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-500 mb-1">ที่อยู่จัดส่งเอกสาร</label>
+              <textarea id="ed_address" rows="2" class="w-full p-2 border rounded-lg font-bold text-slate-700 text-sm">${m.address}</textarea>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2">
+               <div class="col-span-1">
+                 <label class="block text-[10px] font-bold text-slate-500 mb-1">อาชีพ</label>
+                 <input id="ed_job" value="${m.job}" class="w-full p-2 border rounded-lg font-bold text-slate-700 text-sm">
+               </div>
+               <div class="col-span-1">
+                 <label class="block text-[10px] font-bold text-slate-500 mb-1">ตำแหน่ง</label>
+                 <input id="ed_pos" value="${m.position}" class="w-full p-2 border rounded-lg font-bold text-slate-700 text-sm">
+               </div>
+               <div class="col-span-1">
+                 <label class="block text-[10px] font-bold text-slate-500 mb-1">สถานที่ทำงาน</label>
+                 <input id="ed_work" value="${m.workplace}" class="w-full p-2 border rounded-lg font-bold text-slate-700 text-sm">
+               </div>
+            </div>
+          </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'บันทึกการแก้ไข',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#eab308', // สีเหลือง Amber
+        customClass: { popup: 'rounded-[2rem] w-full max-w-lg' },
+        preConfirm: () => {
+          return {
+            sheetName: m.sheetName,
+            rowId: m.rowId,
+            id: m.id,
+            name: m.name,
+            phone: document.getElementById('ed_phone').value,
+            email: document.getElementById('ed_email').value,
+            address: document.getElementById('ed_address').value,
+            job: document.getElementById('ed_job').value,
+            position: document.getElementById('ed_pos').value,
+            workplace: document.getElementById('ed_work').value
+          };
+        }
+      }).then(result => {
+        if (result.isConfirmed) {
+          Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+          
+          TUSW_API.call('updateMemberData', { data: result.value, adminName: currentAdminName }).then(res => {
+            if(res.success) {
+               Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ', timer: 1500, showConfirmButton: false });
+               loadData(); // รีโหลดตาราง
+            } else {
+               Swal.fire('ผิดพลาด', res.message, 'error');
+            }
+          }).catch(err => { Swal.fire('ผิดพลาด', err.message, 'error'); });
+        }
+      });
+    }
+
+    // -----------------------------------------------------
+    // ฟังก์ชันลบสมาชิก (ยืนยันและสั่งลบ)
+    // -----------------------------------------------------
+    function confirmDelete(m) {
+      Swal.fire({
+        title: 'ยืนยันการลบสมาชิก?',
+        html: `
+           <div class="bg-red-50 text-red-700 p-4 rounded-xl border border-red-100 mb-2">
+             <p class="font-bold text-lg">${m.name}</p>
+             <p class="text-sm">รหัส: ${m.id}</p>
+           </div>
+           <p class="text-sm text-slate-500">การกระทำนี้ไม่สามารถย้อนกลับได้ ข้อมูลและประวัติทั้งหมดจะถูกลบถาวร</p>
+        `,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        confirmButtonText: 'ยืนยันลบข้อมูล',
+        cancelButtonText: 'ยกเลิก',
+        customClass: { popup: 'rounded-[2rem]' }
+      }).then((result) => {
+        if (result.isConfirmed) {
+           Swal.fire({ title: 'กำลังลบข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+           
+           TUSW_API.call('deleteMember', { data: {
+              sheetName: m.sheetName,
+              rowId: m.rowId,
+              id: m.id,
+              name: m.name
+           }, adminName: currentAdminName }).then(res => {
+             if(res.success) {
+               Swal.fire({ icon: 'success', title: 'ลบข้อมูลสำเร็จ', timer: 1500, showConfirmButton: false });
+               loadData();
+             } else {
+               Swal.fire('ผิดพลาด', res.message, 'error');
+             }
+           }).catch(err => { Swal.fire('ผิดพลาด', err.message, 'error'); });
+        }
+      });
+    }
+
+// ในไฟล์ MemberList.html
+function viewHistory(id, name) {
+  if (!id || id === 'รอรหัส') {
+      return Swal.fire('ไม่พบข้อมูล', 'สมาชิกรายนี้ยังไม่มีรหัสสมาชิกสมบูรณ์', 'info');
+  }
+
+  // แสดง Loading
+  Swal.fire({ 
+      title: `ประวัติ: ${name}`, 
+      html: '<div class="py-10 text-slate-400 italic">กำลังดึงข้อมูลประวัติ...</div>', 
+      showConfirmButton: false,
+      didOpen: () => Swal.showLoading()
+  });
+
+  TUSW_API.call('getRenewalHistory', { memberId: id }).then(history => {
+    let contentHtml = '';
+
+    if (history && history.length > 0) {
+      // กรณีมีประวัติ
+      contentHtml = `
+        <div class="overflow-x-auto text-left mt-2">
+          <table class="w-full text-sm">
+            <thead class="bg-slate-100 text-slate-700 font-bold">
+              <tr>
+                <th class="p-3 rounded-tl-lg">วันเวลาที่ทำรายการ</th>
+                <th class="p-3">รายละเอียด</th>
+                <th class="p-3">วันหมดอายุใหม่</th>
+                <th class="p-3 rounded-tr-lg text-center">หลักฐาน</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              ${history.map(h => `
+                <tr>
+                  <td class="p-3 font-mono text-slate-600">${h.date}</td>
+                  <td class="p-3 font-bold text-slate-800">${h.detail}</td>
+                  <td class="p-3 text-emerald-600 font-bold">${h.newExpiry}</td>
+                  <td class="p-3 text-center">
+                    ${h.slipUrl ? `<a href="${h.slipUrl}" target="_blank" class="text-blue-600 hover:text-blue-800 underline font-bold text-xs"><i data-lucide="image" class="w-4 h-4 inline"></i> ดูสลิป</a>` : '-'}
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    } else {
+      // กรณีไม่มีประวัติ
+      contentHtml = `
+        <div class="py-8 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200 mt-2">
+           <i data-lucide="history" class="w-10 h-10 text-slate-300 mx-auto mb-2"></i>
+           <p class="text-slate-500 font-medium">ไม่พบประวัติการต่ออายุของสมาชิกท่านนี้</p>
+        </div>
+      `;
+    }
+
+    // อัปเดต Popup
+    Swal.fire({
+      title: `ประวัติการต่ออายุ`,
+      html: `
+        <div class="text-left mb-4">
+           <p class="text-sm text-slate-500">สมาชิก: <b class="text-slate-800">${name}</b> (${id})</p>
+        </div>
+        ${contentHtml}
+      `,
+      width: '600px',
+      showConfirmButton: true,
+      confirmButtonText: 'ปิด',
+      confirmButtonColor: '#64748b',
+      customClass: { popup: 'rounded-[2rem]' },
+      didOpen: () => { if(typeof lucide !== 'undefined') lucide.createIcons(); }
+    });
+
+  }).catch(err => { Swal.fire('เกิดข้อผิดพลาด', err.message, 'error'); });
+}
+
+// ในไฟล์ MemberList.html แก้ไขฟังก์ชันนี้
+function handleImport(inputElement) {
+    
+    // 1. รับไฟล์
+    const file = inputElement.files[0];
+    if (!file) return;
+
+    // 2. ✅ แก้ไข: ดึงค่าจาก "ตัวกรอง (typeFilter)" แทน
+    const typeEl = document.getElementById('typeFilter');
+    const memberType = typeEl ? typeEl.value : ""; 
+
+    // 3. ✅ เพิ่ม: ตรวจสอบว่าเลือกประเภทหรือยัง? (ห้ามเลือก "ทั้งหมด")
+    if (memberType === "") {
+        inputElement.value = ''; // ล้างค่าไฟล์ออก
+        return Swal.fire({
+            icon: 'warning',
+            title: 'กรุณาระบุประเภทสมาชิก',
+            text: 'โปรดเลือกประเภทสมาชิก (สามัญ/สมทบ/กิตติมศักดิ์) จากตัวกรองด้านบน ก่อนทำการ Import ข้อมูล \n(ระบบไม่สามารถนำเข้าข้อมูลลงในหมวด "ทั้งหมด" ได้)',
+            confirmButtonText: 'ตกลง'
+        });
+    }
+
+    // เริ่มอ่านไฟล์
+    const reader = new FileReader();
+    
+    reader.onload = function(e) {
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, {type: 'array'});
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            const rawData = XLSX.utils.sheet_to_json(worksheet, {header: 1, defval: ""});
+
+            // กรองแถวว่าง
+            let cleanData = rawData.filter(row => {
+                if (!row || row.length === 0) return false;
+                return row.some(cell => cell !== null && cell !== undefined && cell.toString().trim() !== "");
+            });
+
+            if (cleanData.length < 2) {
+                inputElement.value = ''; 
+                return Swal.fire('ไฟล์ว่างหรือไม่มีข้อมูล', 'ไฟล์ต้องมีหัวตาราง 1 บรรทัด และข้อมูลอย่างน้อย 1 แถว', 'warning');
+            }
+
+            // ลบ Header
+            cleanData.shift();
+
+            // ส่งข้อมูลไป Server (พร้อมระบุ memberType ที่เลือกจากตัวกรอง)
+            Swal.fire({
+                title: `กำลังนำเข้าสมาชิก: ${memberType}`,
+                text: `พบข้อมูล ${cleanData.length} รายการ`,
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            TUSW_API.call('processImportData', { rows: cleanData, memberType: memberType, adminName: currentAdminName }).then(res => {
+                inputElement.value = ''; 
+                if (res.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'นำเข้าสำเร็จ',
+                        text: `เพิ่มสมาชิก ${memberType} ใหม่เรียบร้อย: ${res.count} คน`,
+                        confirmButtonText: 'ตกลง'
+                    }).then(() => {
+                        loadData(); // รีโหลดตาราง
+                    });
+                } else {
+                    Swal.fire('เกิดข้อผิดพลาด', res.message, 'error');
+                }
+            }).catch(err => { inputElement.value = ''; Swal.fire('เกิดข้อผิดพลาด', err.message, 'error'); });
+
+        } catch (err) {
+            inputElement.value = '';
+            console.error(err);
+            Swal.fire('ไฟล์มีปัญหา', 'ไม่สามารถอ่านไฟล์ Excel นี้ได้', 'error');
+        }
+    };
+
+    reader.readAsArrayBuffer(file);
+}
+
+// ในไฟล์ MemberList.html ค้นหา downloadImportTemplate แล้วแทนที่ด้วยอันนี้
+function downloadImportTemplate() {
+    // 1. หัวตาราง (Headers)
+    const headers = [
+        "รหัสสมาชิก (ปล่อยว่างเพื่อรันอัตโนมัติ)", // A
+        "คำนำหน้า", // B
+        "ชื่อจริง", // C
+        "นามสกุล", // D
+        "ชื่อเล่น", // E
+        "เลขบัตรประชาชน (13 หลัก)", // F
+        "รหัสนศ. ป.ตรี", // G
+        "รหัสนศ. ป.โท", // H
+        "รหัสนศ. ป.เอก", // I
+        "ที่อยู่จัดส่งเอกสาร", // J
+        "เบอร์โทรศัพท์", // K
+        "อีเมล", // L
+        "อาชีพ", // M
+        "ตำแหน่ง", // N
+        "สถานที่ทำงาน", // O
+        "วันที่สมัคร (วว/ดด/ปปปป)", // P
+        "วันหมดอายุ (วว/ดด/ปปปป หรือ ตลอดชีพ)" // Q
+    ];
+
+    // 2. ข้อมูลตัวอย่าง (Sample Data) - เพื่อให้ผู้ใช้เห็นภาพ
+    const sampleData = [
+        "", // รหัสสมาชิก (ปล่อยว่างให้ระบบรันเอง)
+        "นาย", 
+        "รักชาติ", 
+        "ยิ่งชีพ", 
+        "แดง", 
+        "1234567890123", // ตัวอย่างเลขบัตร
+        "50xxxxxxxxx", 
+        "-", 
+        "-", 
+        "99 หมู่ 1 ถ.พหลโยธิน ต.คลองหนึ่ง อ.คลองหลวง จ.ปทุมธานี 12120", 
+        "0812345678", 
+        "example@email.com", 
+        "ข้าราชการ", 
+        "นักสังคมสงเคราะห์", 
+        "กรมพัฒนาสังคมและสวัสดิการ", 
+        "01/01/2568", 
+        "ตลอดชีพ" 
+    ];
+
+    // รวมหัวตารางและข้อมูลตัวอย่างเข้าด้วยกัน
+    const ws_data = [headers, sampleData];
+
+    // สร้าง Workbook และ Worksheet
+    const wb = XLSX.utils.book_new(); 
+    const ws = XLSX.utils.aoa_to_sheet(ws_data);
+    
+    // 3. กำหนดความกว้างคอลัมน์อัตโนมัติ (ให้เหมาะสมกับเนื้อหา)
+    ws['!cols'] = [
+        {wch: 35}, // A: รหัสสมาชิก (กว้างหน่อยเผื่อคำอธิบาย)
+        {wch: 10}, // B: คำนำหน้า
+        {wch: 20}, // C: ชื่อ
+        {wch: 20}, // D: นามสกุล
+        {wch: 10}, // E: ชื่อเล่น
+        {wch: 25}, // F: เลขบัตร (ต้องกว้างพอไม่ให้เป็น Scientific E+)
+        {wch: 15}, // G: รหัสนศ.
+        {wch: 15}, // H
+        {wch: 15}, // I
+        {wch: 50}, // J: ที่อยู่ (กว้างมากเพราะข้อมูลยาว)
+        {wch: 15}, // K: เบอร์โทร
+        {wch: 30}, // L: อีเมล
+        {wch: 20}, // M: อาชีพ
+        {wch: 20}, // N: ตำแหน่ง
+        {wch: 30}, // O: ที่ทำงาน
+        {wch: 25}, // P: วันที่สมัคร
+        {wch: 30}  // Q: วันหมดอายุ
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, "Template");
+    XLSX.writeFile(wb, "Template_Import_Alumni_With_Example.xlsx");
+}
+
+// ฟังก์ชันสำหรับผูกกับปุ่ม "อนุมัติสลิป (ผ่านแล้ว)" ในตาราง
+function approveSlip(sheetName, rowId, memberName) {
+    Swal.fire({
+        title: 'ยืนยันการอนุมัติสลิป?',
+        html: `คุณแน่ใจหรือไม่ว่าต้องการอนุมัติสลิปของ <b>${memberName}</b><br><span class="text-sm text-red-500">*ระบบจะปรับสถานะเป็นสมบูรณ์ ออกรหัส และส่งใบเสร็จอัตโนมัติ</span>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#059669',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'ยืนยันอนุมัติสลิป',
+        cancelButtonText: 'ยกเลิก'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            Swal.fire({ title: 'กำลังประมวลผล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            
+            // ดึงชื่อแอดมินจากตัวแปรในระบบ (หรือใส่เป็น "Admin" ก็ได้)
+            const adminName = "Admin"; 
+            
+            TUSW_API.call('adminApproveSlip', { data: { sheetName: sheetName, rowId: rowId }, adminName: adminName })
+                .then(res => {
+                    if (res.success) {
+                        Swal.fire('สำเร็จ!', res.message, 'success').then(() => {
+                            // โหลดตารางใหม่ (ใส่ฟังก์ชันโหลดตารางของคุณตรงนี้)
+                            loadData(); 
+                        });
+                    } else {
+                        Swal.fire('เกิดข้อผิดพลาด', res.message, 'error');
+                    }
+                })
+                .catch(err => {
+                    Swal.fire('Error', err.message, 'error');
+                });
+        }
+    });
+}
+
+function handleImportFile() {
+    // 1. ตรวจสอบ Element
+    const fileInput = document.getElementById('importFile');
+    const importTypeEl = document.getElementById('importType');
+
+    if (!fileInput || !fileInput.files[0]) {
+        return Swal.fire('เตือน', 'กรุณาเลือกไฟล์ Excel ที่ต้องการนำเข้า', 'warning');
+    }
+
+    const file = fileInput.files[0];
+    const memberType = importTypeEl ? importTypeEl.value : "สามัญ"; // กันเหนียวเผื่อหาไม่เจอ
+
+    const reader = new FileReader();
+    
+    reader.onload = function(e) {
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, {type: 'array'});
+            
+            // อ่าน Sheet แรกสุด
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            
+            // อ่านข้อมูลดิบ (รวม Header ด้วย)
+            const rawData = XLSX.utils.sheet_to_json(worksheet, {header: 1, defval: ""});
+
+            console.log("--- DEBUG IMPORT ---");
+            console.log("Raw Data:", rawData);
+
+            // กรองแถวว่าง (Empty Rows) แบบละเอียด
+            // เก็บแถวที่มีข้อมูลอย่างน้อย 1 ช่อง
+            let cleanData = rawData.filter(row => {
+                if (!row || row.length === 0) return false;
+                // ตรวจว่าในแถวนั้น มีช่องไหนมีตัวหนังสือบ้างไหม?
+                return row.some(cell => cell !== null && cell !== undefined && cell.toString().trim() !== "");
+            });
+
+            console.log("Clean Data:", cleanData);
+
+            // เช็คจำนวนแถว (ต้องมีอย่างน้อย 1 แถว คือ Header)
+            if (cleanData.length < 1) {
+                return Swal.fire('ไฟล์ว่างเปล่า', 'ไม่พบข้อมูลใดๆ ในไฟล์ Excel ของท่าน', 'error');
+            }
+
+            // ถ้ามีแค่ 1 แถว (มีแค่ Header ไม่มีคนสมัคร)
+            if (cleanData.length === 1) {
+                return Swal.fire('ไม่พบรายชื่อ', 'ไฟล์มีแต่หัวตาราง ยังไม่มีข้อมูลสมาชิก', 'warning');
+            }
+
+            // ลบ Header (แถวแรก) ออก ก่อนส่งไปบันทึก
+            cleanData.shift(); 
+
+            // ส่งข้อมูลไป Server
+            Swal.fire({
+                title: 'กำลังประมวลผล...',
+                text: `กำลังนำเข้าข้อมูลจำนวน ${cleanData.length} รายการ`,
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            TUSW_API.call('processImportData', { rows: cleanData, memberType: memberType, adminName: currentAdminName }).then(res => {
+                if (res.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'เสร็จสมบูรณ์',
+                        text: `นำเข้าข้อมูลสำเร็จ: ${res.count} รายการ`,
+                        confirmButtonText: 'ตกลง'
+                    }).then(() => {
+                        document.getElementById('importModal').classList.add('hidden'); // ปิด Modal
+                        loadData(); // รีโหลดตาราง
+                    });
+                } else {
+                    Swal.fire('เกิดข้อผิดพลาดจาก Server', res.message, 'error');
+                }
+            }).catch(err => { Swal.fire('เกิดข้อผิดพลาดจาก Server', err.message, 'error'); });
+
+        } catch (err) {
+            console.error(err);
+            Swal.fire('อ่านไฟล์ไม่สำเร็จ', err.message, 'error');
+        }
+    };
+
+    reader.readAsArrayBuffer(file);
+}
+
+
+// Format เบอร์โทรศัพท์ให้อ่านง่าย
+function formatPhone(phone) {
+  if (!phone) return '-';
+  const p = phone.toString().replace(/[^0-9]/g, '');
+  if (p.length === 10) return p.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
+  return phone;
+}
+
+// Logout — ล้าง session
+function adminLogout() {
+  sessionStorage.removeItem('adminToken');
+  sessionStorage.removeItem('adminName');
+  location.reload();
+}
+
+// ============================================================
+// ✅ HONORARY MEMBER PANEL — ฝังจาก HonoraryForm.html เดิม
+// ============================================================
+let honAddressLoaded = false;
+let honAllDistricts = [];
+let honAllSubDistricts = [];
+
+function openHonoraryPanel() {
+  document.getElementById('honoraryModal').classList.remove('hidden');
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+  if (!honAddressLoaded) {
+    honLoadAddressData();
+    honAddressLoaded = true;
+  }
+}
+
+function closeHonoraryPanel() {
+  document.getElementById('honoraryModal').classList.add('hidden');
+}
+
+async function honLoadAddressData() {
+  const provinceSelect = document.getElementById('hon_addr_province');
+  try {
+    const [resP, resD, resS] = await Promise.all([
+      fetch('https://raw.githubusercontent.com/kongvut/thai-province-data/refs/heads/master/api/latest/province.json'),
+      fetch('https://raw.githubusercontent.com/kongvut/thai-province-data/refs/heads/master/api/latest/district.json'),
+      fetch('https://raw.githubusercontent.com/kongvut/thai-province-data/refs/heads/master/api/latest/sub_district.json')
+    ]);
+    const provinces = await resP.json();
+    honAllDistricts = await resD.json();
+    honAllSubDistricts = await resS.json();
+
+    provinces.sort((a, b) => a.name_th.localeCompare(b.name_th, 'th'));
+    provinceSelect.innerHTML = '<option value="">เลือกจังหวัด</option>';
+    provinces.forEach(pv => {
+      let opt = document.createElement('option');
+      opt.value = pv.name_th; opt.text = pv.name_th; opt.dataset.id = pv.id;
+      provinceSelect.add(opt);
+    });
+  } catch (e) { console.error("Address Load Error:", e); }
+}
+
+function honUpdateAmphure() {
+  const pSel = document.getElementById('hon_addr_province');
+  const aSel = document.getElementById('hon_addr_amphure');
+  const tSel = document.getElementById('hon_addr_tambon');
+  const pId = pSel.options[pSel.selectedIndex]?.dataset.id;
+  aSel.innerHTML = '<option value="">เลือกอำเภอ/เขต</option>';
+  tSel.innerHTML = '<option value="">เลือกตำบล/แขวง</option>';
+  document.getElementById('hon_addr_zipcode').value = '';
+  if (!pId) { aSel.disabled = true; return; }
+  honAllDistricts.filter(d => d.province_id == pId).sort((a, b) => a.name_th.localeCompare(b.name_th, 'th')).forEach(d => {
+      let opt = document.createElement('option');
+      opt.value = d.name_th; opt.text = d.name_th; opt.dataset.id = d.id;
+      aSel.add(opt);
+  });
+  aSel.disabled = false; tSel.disabled = true;
+}
+
+function honUpdateTambon() {
+  const aSel = document.getElementById('hon_addr_amphure');
+  const tSel = document.getElementById('hon_addr_tambon');
+  const dId = aSel.options[aSel.selectedIndex]?.dataset.id;
+  tSel.innerHTML = '<option value="">เลือกตำบล/แขวง</option>';
+  document.getElementById('hon_addr_zipcode').value = '';
+  if (!dId) { tSel.disabled = true; return; }
+  honAllSubDistricts.filter(s => s.district_id == dId).sort((a, b) => a.name_th.localeCompare(b.name_th, 'th')).forEach(s => {
+      let opt = document.createElement('option');
+      opt.value = s.name_th; opt.text = s.name_th; opt.dataset.zip = s.zip_code;
+      tSel.add(opt);
+  });
+  tSel.disabled = false;
+}
+
+function honUpdateZipcode() {
+  const tSel = document.getElementById('hon_addr_tambon');
+  const zip = tSel.options[tSel.selectedIndex]?.dataset.zip;
+  document.getElementById('hon_addr_zipcode').value = zip || '';
+}
+
+function handleHonorarySubmit(form) {
+  event.preventDefault();
+
+  // 1. ดึงค่าตัวแปรสำหรับการตรวจสอบ
+  const prov = document.getElementById('hon_addr_province').value;
+  const amphure = document.getElementById('hon_addr_amphure').value;
+  const tambon = document.getElementById('hon_addr_tambon').value;
+  const zip = document.getElementById('hon_addr_zipcode').value;
+  const idCard = form.idCard.value;
+
+  // 2. ตรวจสอบข้อมูลพื้นฐาน
+  if (!prov || !amphure || !tambon) {
+    Swal.fire({ icon: 'warning', title: 'ข้อมูลที่อยู่ไม่ครบถ้วน', text: 'กรุณาเลือกที่อยู่ให้เรียบร้อย' });
+    return;
+  }
+  if (idCard.length !== 13) {
+    Swal.fire({ icon: 'warning', title: 'เลขบัตรประชาชนไม่ถูกต้อง', text: 'กรุณากรอกให้ครบ 13 หลัก' });
+    return;
+  }
+
+  // 3. จัดรูปแบบที่อยู่และเตรียมข้อมูล Object
+  const isBKK = prov === "กรุงเทพมหานคร";
+  const fullAddress = `${form.addr_main.value} ${isBKK ? 'แขวง' : 'ต.'}${tambon} ${isBKK ? 'เขต' : 'อ.'}${amphure} จ.${prov} ${zip}`;
+
+  const formData = {
+    title: form.title.value,
+    fname: form.fname.value,
+    lname: form.lname.value,
+    idCard: idCard,
+    dob: form.dob.value,
+    phone: form.phone.value,
+    email: form.email.value,
+    position: form.position.value,
+    workplace: form.workplace.value,
+    address: fullAddress,
+    job: "สมาชิกกิตติมศักดิ์"
+  };
+
+  // 4. ยืนยันการบันทึก
+  Swal.fire({
+    title: 'ยืนยันการบันทึกข้อมูล?',
+    text: "ระบบจะรันเลขสมาชิกและส่งบัตรภาพเข้าอีเมลทันที",
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#059669',
+    confirmButtonText: 'ยืนยันการบันทึก'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      Swal.fire({ title: 'กำลังรันเลขสมาชิก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+      // --- จังหวะที่ 1: ขอเลขสมาชิกถัดไปจาก Server ---
+      TUSW_API.call('getNextHonoraryId', {}).then(memberID => {
+
+        Swal.fire({ title: 'กำลังสร้างภาพบัตรสมาชิก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+        // --- จังหวะที่ 2: วาดภาพบัตรโดยใช้เลขรหัสจริง ---
+        const canvas = document.getElementById('honoraryCardCanvas');
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // วาดดีไซน์บัตร (Gradient เขียวกิตติมศักดิ์)
+        const grad = ctx.createLinearGradient(0, 0, 600, 350);
+        grad.addColorStop(0, '#14532d'); grad.addColorStop(1, '#064e3b');
+        ctx.fillStyle = grad;
+        ctx.beginPath(); ctx.roundRect(0, 0, 600, 350, [25]); ctx.fill();
+
+        // ลายน้ำวงกลม
+        ctx.beginPath(); ctx.strokeStyle = "rgba(255, 255, 255, 0.05)"; ctx.lineWidth = 50;
+        ctx.arc(600, 350, 200, 0, Math.PI * 2); ctx.stroke();
+
+        const logo = new Image();
+        logo.crossOrigin = "anonymous";
+        logo.src = "https://img2.pic.in.th/cropped_circle_image4abd3ce094449065.png";
+
+        logo.onload = () => {
+          ctx.drawImage(logo, 480, 25, 90, 90);
+          ctx.fillStyle = "white"; ctx.textBaseline = "top";
+          ctx.font = "bold 22px Sarabun"; ctx.fillText("สมาคมนักศึกษาเก่าสังคมสงเคราะห์ศาสตร์ มธ.", 30, 40);
+          ctx.font = "14px Sarabun"; ctx.fillStyle = "rgba(255, 255, 255, 0.6)"; ctx.fillText("TU SOCIAL ADMINISTRATION ALUMNI ASSOCIATION", 30, 70);
+          ctx.fillStyle = "white"; ctx.font = "36px Sarabun"; ctx.fillText(formData.title + formData.fname + " " + formData.lname, 30, 160);
+
+          // ใส่เลขรหัสสมาชิกจริงลงบนบัตร
+          ctx.font = "bold 65px Sarabun"; ctx.fillStyle = "#fbbf24";
+          ctx.fillText(memberID, 30, 205);
+
+          ctx.font = "bold 20px Sarabun"; ctx.fillStyle = "white";
+          ctx.fillText(`ประเภทสมาชิก: กิตติมศักดิ์`, 30, 285);
+          ctx.font = "16px Sarabun"; ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+          ctx.fillText(`สถานะ: สมบูรณ์ (ตลอดชีพ)`, 30, 315);
+
+          const base64Card = canvas.toDataURL('image/png');
+
+          // --- ส่วนเดิมในจังหวะที่ 3 ---
+          TUSW_API.call('processHonoraryForm', { data: formData, base64Card: base64Card, memberID: memberID })
+            .then(res => {
+              if (res.status === "success") {
+                Swal.fire({
+                  icon: 'success',
+                  title: 'บันทึกสำเร็จ!',
+                  text: res.message,
+                  confirmButtonColor: '#059669'
+                }).then(() => {
+                  // 1. ล้างข้อมูลในฟอร์มออกเพื่อให้พร้อมสำหรับการคีย์คนถัดไป
+                  form.reset();
+
+                  // 2. รีเซ็ต Dropdown ที่อยู่ (ถ้าต้องการให้เลือกจังหวัดใหม่)
+                  document.getElementById('hon_addr_amphure').disabled = true;
+                  document.getElementById('hon_addr_tambon').disabled = true;
+
+                  // 3. ปิด Panel และกลับไปหน้าจัดการสมาชิก พร้อมรีโหลดตาราง
+                  closeHonoraryPanel();
+                  loadData();
+                });
+              } else {
+                Swal.fire({ icon: 'error', title: 'ผิดพลาด', text: res.message });
+              }
+            })
+            .catch(err => { Swal.fire({ icon: 'error', title: 'ผิดพลาด', text: err.message }); });
+        };
+      }).catch(err => { Swal.fire({ icon: 'error', title: 'ผิดพลาด', text: err.message }); });
+    }
+  });
+}
+  </script>
 </body>
 </html>
