@@ -1382,8 +1382,10 @@ function handleHonorarySubmit(form) {
 let nlImages = []; // { base64, filename, mimeType } — เก็บรูปที่บีบอัดแล้ว รอส่ง
 const NL_MAX_IMAGES = 3;
 
-function openNewsletterModal() {
-  nlImages = []; // เคลียร์รูปทุกครั้งที่เปิด modal ใหม่
+function openNewsletterModal(draft) {
+  if (!draft) {
+    nlImages = []; // เคลียร์รูปเฉพาะตอนเปิดใหม่จริงๆ (ไม่ใช่ตอนย้อนกลับมาจากการส่งทดสอบ)
+  }
 
   Swal.fire({
     title: '📧 ส่งข่าวสารถึงสมาชิก',
@@ -1409,6 +1411,9 @@ function openNewsletterModal() {
           <div id="nl-image-preview" class="flex flex-wrap gap-2"></div>
           <p id="nl-image-status" class="text-[11px] text-slate-400 mt-1"></p>
         </div>
+        <button type="button" onclick="sendNewsletterTestPrompt()" class="w-full flex items-center justify-center gap-2 py-2.5 border-2 border-dashed border-indigo-200 text-indigo-600 rounded-xl text-xs font-bold hover:bg-indigo-50 transition-all">
+          <i data-lucide="flask-conical" class="w-4 h-4"></i> ส่งอีเมลทดสอบก่อนส่งจริง (ไม่กระทบสมาชิกจริง)
+        </button>
         <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
           <p class="text-xs font-extrabold text-slate-600 mb-2">ส่งถึงสมาชิกประเภท</p>
           <div class="flex flex-wrap gap-4 text-sm font-bold text-slate-700">
@@ -1431,6 +1436,11 @@ function openNewsletterModal() {
     customClass: { popup: 'rounded-[2rem]' },
     didOpen: () => {
       if (typeof lucide !== 'undefined') lucide.createIcons();
+      if (draft) {
+        document.getElementById('nl-subject').value = draft.subject || '';
+        document.getElementById('nl-message').value = draft.message || '';
+      }
+      renderNlImagePreviews(); // แสดงรูปที่แนบไว้ก่อนหน้า (ถ้ามีจากตอนกลับมาหลังทดสอบ)
       refreshNewsletterCount();
       refreshNewsletterQueueBanner();
       document.querySelectorAll('.nl-filter').forEach(el => el.addEventListener('change', refreshNewsletterCount));
@@ -1537,6 +1547,51 @@ function renderNlImagePreviews() {
 function removeNlImage(index) {
   nlImages.splice(index, 1);
   renderNlImagePreviews();
+}
+
+// ส่งอีเมลทดสอบ 1 ฉบับไปยังอีเมลที่ระบุ ก่อนส่งจริงให้สมาชิกทั้งหมด
+function sendNewsletterTestPrompt() {
+  const subject = document.getElementById('nl-subject').value.trim();
+  const message = document.getElementById('nl-message').value.trim();
+
+  if (!subject || !message) {
+    Swal.fire({ icon: 'warning', title: 'กรอกให้ครบก่อน', text: 'กรุณากรอกหัวข้อและเนื้อหาข่าวสารก่อนส่งทดสอบ', confirmButtonColor: '#4338ca' });
+    return;
+  }
+
+  Swal.fire({
+    title: '🧪 ส่งอีเมลทดสอบ',
+    input: 'email',
+    inputLabel: 'ส่งไปที่อีเมล (เช่น อีเมลของแอดมินเอง)',
+    inputPlaceholder: 'you@example.com',
+    showCancelButton: true,
+    confirmButtonText: 'ส่งทดสอบ',
+    cancelButtonText: 'ยกเลิก',
+    confirmButtonColor: '#4338ca',
+    inputValidator: (value) => {
+      if (!value || !value.includes('@')) return 'กรุณากรอกอีเมลให้ถูกต้อง';
+    }
+  }).then((result) => {
+    if (!result.isConfirmed) return;
+    const testEmail = result.value.trim();
+
+    Swal.fire({ title: 'กำลังส่งอีเมลทดสอบ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+    TUSW_API.call('sendNewsletterTest', { subject: subject, message: message, images: nlImages, testEmail: testEmail })
+      .then(res => {
+        if (res.success) {
+          Swal.fire({ icon: 'success', title: 'ส่งทดสอบสำเร็จ', text: res.message, confirmButtonColor: '#4338ca' })
+            .then(() => openNewsletterModal({ subject: subject, message: message }));
+        } else {
+          Swal.fire('เกิดข้อผิดพลาด', res.message, 'error')
+            .then(() => openNewsletterModal({ subject: subject, message: message }));
+        }
+      })
+      .catch(err => {
+        Swal.fire('เกิดข้อผิดพลาด', err.message, 'error')
+          .then(() => openNewsletterModal({ subject: subject, message: message }));
+      });
+  });
 }
 
 function getNewsletterFilters() {
