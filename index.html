@@ -1637,7 +1637,7 @@ function refreshNewsletterCount() {
         el2.innerHTML = `📬 ผู้รับทั้งหมด ${res.count.toLocaleString('th-TH')} ราย — วันนี้ส่งได้ ${res.remainingQuota.toLocaleString('th-TH')} ราย ส่วนที่เหลือ <b>${willQueue.toLocaleString('th-TH')} ราย</b> ระบบจะเข้าคิวส่งต่อให้อัตโนมัติในวันถัดไป`;
         el2.className = 'text-xs font-bold text-amber-600 text-center py-1';
       } else {
-        el2.textContent = `📬 จะส่งถึงสมาชิกทั้งหมด ${res.count.toLocaleString('th-TH')} ราย (โควตาอีเมลคงเหลือวันนี้ ${res.remainingQuota.toLocaleString('th-TH')} ฉบับ)`;
+        el2.textContent = `📬 จะส่งถึงสมาชิกทั้งหมด ${res.count.toLocaleString('th-TH')} ราย (โควตาที่ใช้ได้วันนี้ ${res.remainingQuota.toLocaleString('th-TH')} ฉบับ — กันสำรอง 10% ไว้ให้อีเมลระบบอื่นแล้ว)`;
         el2.className = 'text-xs font-bold text-indigo-600 text-center py-1';
       }
     } else {
